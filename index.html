@@ -1187,7 +1187,16 @@
 
     let books = JSON.parse(localStorage.getItem('bv_books')) || defaultBooks;
     
-    let storedBanners = JSON.parse(localStorage.getItem('bv_banners'));
+    const BANNER_VERSION = 'v2';
+let savedVersion = localStorage.getItem('bv_banner_version');
+let storedBanners = null;
+
+if (savedVersion !== BANNER_VERSION) {
+  localStorage.removeItem('bv_banners');
+  localStorage.setItem('bv_banner_version', BANNER_VERSION);
+} else {
+  storedBanners = JSON.parse(localStorage.getItem('bv_banners'));
+}
     if (!storedBanners || storedBanners.length > 1) {
       banners = defaultBanners;
       localStorage.setItem('bv_banners', JSON.stringify(banners));
