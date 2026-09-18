@@ -204,7 +204,7 @@
     <!-- ADMIN VIEW -->
     <div id="adminView" class="hidden space-y-6">
       
-      <!-- Stats Dashboard (Updated: Total orders & today orders) -->
+      <!-- Stats Dashboard -->
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-slate-200/80 dark:border-slate-700/80">
           <p class="text-xs text-slate-500 font-semibold" id="statOrdersLbl">Всього замовлень</p>
@@ -382,7 +382,7 @@
     <div id="bookModalContent" class="relative bg-white dark:bg-slate-800 dark:text-white rounded-3xl max-w-lg w-full p-6 shadow-2xl z-10 max-h-[90vh] overflow-y-auto"></div>
   </div>
 
-  <!-- ADD / EDIT BOOK MODAL (Includes Book Code / SKU field) -->
+  <!-- ADD / EDIT BOOK MODAL -->
   <div id="addBookModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4">
     <div onclick="closeAddBookModal()" class="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"></div>
     <div class="relative bg-white dark:bg-slate-800 dark:text-white rounded-3xl max-w-md w-full p-6 shadow-2xl z-10 max-h-[90vh] overflow-y-auto">
@@ -471,7 +471,6 @@
   <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
   <script>
-    /* Multilingual Dictionary with Tag Translations & Order Success Message */
     const translations = {
       uk: {
         searchPlaceholder: "Пошук книг, авторів, жанрів...",
@@ -912,12 +911,26 @@
       'Класика': { uk: 'Класика', pl: 'Klasyka', en: 'Classics', ru: 'Классика' },
       'Развиток': { uk: 'Саморозвиток', pl: 'Rozwój osobisty', en: 'Self-Development', ru: 'Саморазвитие' },
       'Фентезі': { uk: 'Фентезі', pl: 'Fantasy', en: 'Fantasy', ru: 'Фэнтези' },
-      'Детективи': { uk: 'Детективи', pl: 'Kryminały', en: 'Detective & Mystery', ru: 'Детективы' }
+      'Детективи': { uk: 'Детективи', pl: 'Kryminały', en: 'Detective & Mystery', ru: 'Детективы' },
+      'Трилери': { uk: 'Трилери', pl: 'Kryminały i Thrillery', en: 'Thrillers', ru: 'Триллеры' },
+      'Жахи': { uk: 'Жахи / Хоррор', pl: 'Horror', en: 'Horror', ru: 'Ужасы / Хоррор' },
+      'Пригоди': { uk: 'Пригоди', pl: 'Przygodowe', en: 'Adventure', ru: 'Приключения' },
+      'Драма': { uk: 'Драма', pl: 'Dramat', en: 'Drama', ru: 'Драма' },
+      'Комедія': { uk: 'Комедія', pl: 'Komedia', en: 'Comedy', ru: 'Комедия' },
+      'Антиутопія': { uk: 'Антиутопія', pl: 'Dystopia', en: 'Dystopia', ru: 'Антиутопия' },
+      'Утопія': { uk: 'Утопія', pl: 'Utopia', en: 'Utopia', ru: 'Утопия' },
+      'Біографія': { uk: 'Біографія', pl: 'Biografia', en: 'Biography', ru: 'Биография' },
+      'Містика': { uk: 'Містика', pl: 'Mistyka', en: 'Mysticism & Paranormal', ru: 'Мистика' },
+      'Романи': { uk: 'Романи', pl: 'Romans', en: 'Romance Novels', ru: 'Романы' },
+      'Бізнес': { uk: 'Бізнес та економіка', pl: 'Biznes i ekonomia', en: 'Business & Economics', ru: 'Бизнес и экономика' },
+      'Психологія': { uk: 'Психологія', pl: 'Psychologia', en: 'Psychology', ru: 'Психология' },
+      'Історія': { uk: 'Історія', pl: 'Historia', en: 'History', ru: 'История' },
+      'Детские': { uk: 'Дитяча література', pl: 'Literatura dziecięca', en: 'Children\'s Books', ru: 'Детская литература' },
+      'Поезія': { uk: 'Поезія', pl: 'Poezja', en: 'Poetry', ru: 'Поэзия' }
     };
 
     let currentLang = 'uk';
 
-    /* Clean Banners without Multilingual label */
     const defaultBanners = [
       { id: 1, title: 'Найкраща література для вас', subtitle: 'Широкий вибір книг українською, польською, англійською та російською мовами.', bg: 'from-indigo-600 to-purple-800', image: 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=600', buttonText: 'Каталог', active: true }
     ];
@@ -927,8 +940,7 @@
       { id: 2, code: 'BS-102', title: '1984', author: 'George Orwell', category: 'Класика', condition: 'used', lang: 'RU', tag: 'bestseller', price: 29.90, discount: 0, rating: 4.8, isOnOrder: false, image: 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=400', desc: 'Роман-антиутопия о тоталитарном обществе.', reviews: [] }
     ];
 
-    /* Automatic v2 Cache Reset Check */
-    const STORAGE_VERSION = 'v2';
+    const STORAGE_VERSION = 'v4';
     if (localStorage.getItem('bs_version') !== STORAGE_VERSION) {
       localStorage.removeItem('bv_books');
       localStorage.removeItem('bv_banners');
@@ -1165,18 +1177,22 @@
     }
 
     function getMasterGenresList() {
-      const predefined = ['Фантастика', 'Класика', 'Развиток', 'Фентезі', 'Детективи'];
+      const predefined = Object.keys(genreTranslations);
       return [...new Set([...predefined, ...books.map(b => b.category)])];
     }
 
     function renderCategories() {
       const t = translations[currentLang];
       const masterGenres = ['all', ...getMasterGenresList()];
-      document.getElementById('categoriesList').innerHTML = ['all', 'Фантастика', 'Класика', 'Развиток'].map(cat => `
+      const popularGenres = ['all', 'Фантастика', 'Класика', 'Развиток', 'Фентезі', 'Детективи'];
+
+      document.getElementById('categoriesList').innerHTML = popularGenres.map(cat => `
         <button onclick="filterCategory('${cat}')" class="px-4 py-2 text-xs font-bold rounded-2xl border transition whitespace-nowrap ${currentCategory === cat ? 'bg-indigo-600 text-white dark:bg-amber-400 dark:text-slate-950 shadow-md' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'}">
           ${cat === 'all' ? t.allCategories : translateGenre(cat)}
         </button>`).join('');
-      document.getElementById('allGenresDropdown').innerHTML = `<option value="all">${t.lblAllGenresDropdown}</option>` + masterGenres.filter(g => g !== 'all').map(g => `<option value="${g}" ${currentCategory === g ? 'selected' : ''}>${translateGenre(g)}</option>`).join('');
+
+      document.getElementById('allGenresDropdown').innerHTML = `<option value="all">${t.lblAllGenresDropdown}</option>` + 
+        masterGenres.filter(g => g !== 'all').map(g => `<option value="${g}" ${currentCategory === g ? 'selected' : ''}>${translateGenre(g)}</option>`).join('');
     }
 
     function filterCategory(cat) { currentCategory = cat; currentPage = 1; renderCategories(); renderBooks(); }
@@ -1219,7 +1235,6 @@
       document.getElementById('booksGrid').innerHTML = paginated.map(b => `
         <div class="bg-white dark:bg-slate-800 rounded-3xl shadow-sm hover:shadow-xl transition-all overflow-hidden flex flex-col relative group border border-slate-200/80 dark:border-slate-700/80">
           <div class="absolute top-3 left-3 z-10 flex flex-col gap-1">
-            <span class="bg-slate-900/80 text-amber-300 backdrop-blur-md text-[9px] font-extrabold px-2 py-0.5 rounded-full uppercase">Код: ${b.code || 'N/A'}</span>
             <span class="${b.condition === 'used' ? 'bg-amber-600' : 'bg-emerald-600'} text-white text-[9px] font-bold px-2 py-0.5 rounded-full uppercase">${b.condition === 'used' ? t.condUsed : t.condNew}</span>
             <span class="bg-slate-900/60 text-white text-[9px] font-bold px-2 py-0.5 rounded-full uppercase">${b.lang || 'UA'}</span>
           </div>
@@ -1253,7 +1268,7 @@
       const book = books.find(b => b.id === id);
       if (!book) return;
       document.getElementById('quickBuyBookId').value = book.id;
-      document.getElementById('quickBuyItemPreview').innerHTML = `<img src="${book.image}" class="w-10 h-14 object-cover rounded-lg"><div><h4 class="font-bold text-xs">${book.title} (${book.code})</h4><p class="text-[10px] text-slate-500">${book.author}</p><p class="text-xs font-black text-indigo-600 dark:text-amber-400">${getFinalPrice(book).toFixed(2)} zł</p></div>`;
+      document.getElementById('quickBuyItemPreview').innerHTML = `<img src="${book.image}" class="w-10 h-14 object-cover rounded-lg"><div><h4 class="font-bold text-xs">${book.title}</h4><p class="text-[10px] text-slate-500">${book.author}</p><p class="text-xs font-black text-indigo-600 dark:text-amber-400">${getFinalPrice(book).toFixed(2)} zł</p></div>`;
       document.getElementById('quickBuyModal').classList.remove('hidden');
     }
     function closeQuickBuyModal() { document.getElementById('quickBuyModal').classList.add('hidden'); }
@@ -1282,7 +1297,7 @@
       userOrders.unshift(newOrder);
       saveOrdersToStorage();
       sendOrderNotification(newOrder);
-      showToast(t.quickBuySuccess);
+      showToast(t.orderSuccessMsg);
       closeQuickBuyModal();
     }
 
@@ -1292,7 +1307,7 @@
         <div class="bg-slate-50 dark:bg-slate-700/50 p-4 rounded-2xl text-xs space-y-2 border dark:border-slate-600">
           <div class="flex justify-between font-bold"><span>Замовлення #${o.id.toString().slice(-4)}</span><span class="text-slate-400 font-normal">${o.date}</span></div>
           <div class="text-slate-500">Доставка: <span class="uppercase text-indigo-600 dark:text-amber-400">${o.shipping}</span> (${o.details})</div>
-          <div class="text-slate-600 dark:text-slate-300">${o.items.map(i => `<div>• [${i.code}]${i.title} (x${i.qty}) -${i.price.toFixed(2)} zł</div>`).join('')}</div>
+          <div class="text-slate-600 dark:text-slate-300">${o.items.map(i => `<div>• ${i.title} (x${i.qty}) -${i.price.toFixed(2)} zł</div>`).join('')}</div>
           <div class="flex justify-between items-center pt-2 border-t dark:border-slate-600 font-bold"><span>Разом:</span><span class="text-indigo-600 dark:text-amber-400 font-black">${o.total.toFixed(2)} zł</span></div>
         </div>`).join('') : `<p class="text-center text-slate-400 text-xs py-8">${t.noOrdersHistory}</p>`;
       document.getElementById('ordersModal').classList.remove('hidden');
@@ -1310,7 +1325,6 @@
           <img src="${book.image}" class="w-full sm:w-48 h-64 object-cover rounded-2xl shadow-md">
           <div class="flex-1 flex flex-col justify-between">
             <div>
-              <span class="text-[10px] bg-slate-900 text-amber-300 font-bold px-2 py-0.5 rounded-full uppercase">Код: ${book.code || 'N/A'}</span>
               <h2 class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-1">${book.title}</h2>
               <p class="text-sm text-slate-500 mb-2">${book.author}</p>
               <div class="flex items-center gap-1 text-amber-500 text-sm mb-4"><i class="fa-solid fa-star"></i><span class="font-bold">${book.rating.toFixed(1)}</span></div>
@@ -1338,7 +1352,7 @@
       document.getElementById('wishlistCount').innerText = wishlist.length;
       document.getElementById('wishlistItems').innerHTML = wishlist.length ? wishlist.map(id => {
         const book = books.find(b => b.id === id);
-        return `<div class="flex items-center gap-3 border-b dark:border-slate-700 pb-3"><img src="${book.image}" class="w-10 h-14 object-cover rounded-lg"><div class="flex-1 min-w-0"><h4 class="font-bold text-xs truncate">${book.title}</h4><p class="text-[10px] text-slate-500">${book.code}</p></div><button onclick="toggleWishlist(${book.id})" class="text-rose-500 p-2"><i class="fa-solid fa-trash"></i></button></div>`;
+        return `<div class="flex items-center gap-3 border-b dark:border-slate-700 pb-3"><img src="${book.image}" class="w-10 h-14 object-cover rounded-lg"><div class="flex-1 min-w-0"><h4 class="font-bold text-xs truncate">${book.title}</h4></div><button onclick="toggleWishlist(${book.id})" class="text-rose-500 p-2"><i class="fa-solid fa-trash"></i></button></div>`;
       }).join('') : `<p class="text-center text-slate-400 text-xs py-8">${translations[currentLang].wishlistEmpty}</p>`;
     }
     function toggleWishlistModal() { document.getElementById('wishlistModal').classList.toggle('hidden'); }
@@ -1358,7 +1372,7 @@
         const book = books.find(b => b.id === i.id);
         const price = getFinalPrice(book);
         total += price * i.qty;
-        return `<div class="flex items-center gap-3 border-b dark:border-slate-700 pb-3"><img src="${book.image}" class="w-10 h-14 object-cover rounded-lg"><div class="flex-1 min-w-0"><h4 class="font-bold text-xs truncate">${book.title}</h4><p class="text-[10px] text-slate-500">Код: ${book.code}</p></div><div class="flex items-center border rounded-xl"><button onclick="changeQty(${book.id}, -1)" class="px-2 py-1">-</button><span class="px-2 text-xs font-bold">${i.qty}</span><button onclick="changeQty(${book.id}, 1)" class="px-2 py-1">+</button></div></div>`;
+        return `<div class="flex items-center gap-3 border-b dark:border-slate-700 pb-3"><img src="${book.image}" class="w-10 h-14 object-cover rounded-lg"><div class="flex-1 min-w-0"><h4 class="font-bold text-xs truncate">${book.title}</h4></div><div class="flex items-center border rounded-xl"><button onclick="changeQty(${book.id}, -1)" class="px-2 py-1">-</button><span class="px-2 text-xs font-bold">${i.qty}</span><button onclick="changeQty(${book.id}, 1)" class="px-2 py-1">+</button></div></div>`;
       }).join('') : `<p class="text-center text-slate-400 text-xs py-8">${t.cartEmpty}</p>`;
       document.getElementById('cartTotal').innerText = `${total.toFixed(2)} zł`;
     }
